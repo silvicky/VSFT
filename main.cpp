@@ -7,7 +7,7 @@ using namespace std;
 struct huffman
 {
     bool isLeaf;
-    char content;
+    unsigned char content;
     int weight;
     huffman *l,*r;
     huffman()
@@ -20,7 +20,7 @@ struct huffman
     huffman(char x,int y)
     {
         isLeaf=1;
-        content=x;
+        content=(unsigned char)x;
         weight=y;
         l=r=nullptr;
     }
@@ -42,10 +42,10 @@ struct cmp
 };
 ifstream ifs;
 ofstream ofs;
-long long fileSize=0;
+unsigned long long fileSize=0;
 time_t ta, tb;
 int gf;
-void help(char* myName)
+void help()
 {
     cout<<"A Huffman coding and decoding program."<<endl;
     cout<<"Usage: "<<endl;
@@ -73,7 +73,7 @@ void travel(huffman* cur,vector<bool>* vec,vector<bool>& stk,int fa)
     int curid=gf++;
     if(cur->isLeaf)
     {
-        vec[cur->content+128]=stk;
+        vec[cur->content]=stk;
         ofs<<cur->content<<(char)(fa/256)<<(char)(fa%256);
         return;
     }
@@ -95,19 +95,19 @@ bool feed(queue<bool>& q)
 }
 void coding()
 {
-    long long cnt[256]={0};
+    unsigned long long cnt[256]={0};
     char tmpc;
     huffman *lcur,*rcur;
     vector<bool> vec[256];
     vector<bool> stk;
     queue<bool> oq;
     time(&ta);
-    long long val=0,curSize=0,finalSize=0;
+    unsigned long long val=0,curSize=0,finalSize=0;
     cout << "Preflight...\n";
-    while(ifs.get(tmpc))cnt[tmpc+128]++;
+    while(ifs.get(tmpc))cnt[(unsigned char)tmpc]++;
     priority_queue<huffman*,vector<huffman*>,cmp> pq;
     /* Build Huffman tree. */
-    for(int i=0;i<256;i++)if(cnt[i]!=0)pq.push(new huffman(i-128,cnt[i]));
+    for(int i=0;i<256;i++)if(cnt[i]!=0)pq.push(new huffman(i,cnt[i]));
     while(pq.size()>1)
     {
         lcur=pq.top();
@@ -136,7 +136,7 @@ void coding()
     {
         curSize++;
         if (curSize * 100 / fileSize != (curSize - 1) * 100 / fileSize)printProgress(curSize*100/fileSize);
-        for(int i=0;i<vec[tmpc+128].size();i++)oq.push(vec[tmpc+128][i]);
+        for(int i=0;i<vec[(unsigned char)tmpc].size();i++)oq.push(vec[(unsigned char)tmpc][i]);
         while(oq.size()>=8)
         {
             val=0;
@@ -170,7 +170,6 @@ void decoding()
 {
     char head[3],tmpc,tmpa,tmpb;
     huffman *node[512],*cur;
-    long long fileSize;
     int fa;
     queue<bool> q;
     time(&ta);
@@ -188,7 +187,7 @@ void decoding()
         ifs.get(tmpb);
         node[i]=new huffman(tmpc,0);
         if(tmpa>1)continue;
-        fa=(tmpa>=0?tmpa:tmpa+256)*256+(tmpb>=0?tmpb:tmpb+256);
+        fa=(int)tmpa<<8|(unsigned char)tmpb;
         if((fa>512&&fa!=1024)||!node[fa])
         {
             cout << "FATAL: Invalid tree structure!";
@@ -211,7 +210,7 @@ void decoding()
     }
     /* Restore file. */
     printProgress(0);
-    for(long long i=0;i<fileSize;i++)
+    for(unsigned long long i=0;i<fileSize;i++)
     {
         if (i * 100 / fileSize != (i - 1) * 100 / fileSize)printProgress(i * 100 / fileSize);
         while (!cur->isLeaf)
@@ -227,7 +226,7 @@ void decoding()
             cur=q.front()?cur->r:cur->l;
             q.pop();
         }
-        ofs<<cur->content;
+        ofs<<(char)cur->content;
         cur=node[0];
     }
     printProgress(100);
@@ -238,7 +237,7 @@ int main(int argc, char** argv)
 {
     if(argc!=4||(argv[1][0]!='c'&&argv[1][0]!='d'))
     {
-        help(argv[0]);
+        help();
         return 0;
     }
     ifs.open(argv[2],std::ifstream::in|std::ifstream::binary);
